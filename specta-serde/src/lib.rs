@@ -42,7 +42,7 @@ fn is_valid_ty_internal(
     checked_references: &mut HashSet<SpectaID>,
 ) -> Result<(), SerdeError> {
     match dt {
-        DataType::Nullable(ty) => is_valid_ty(ty, type_map)?,
+        DataType::Nullable(ty) => is_valid_ty_internal(ty, type_map, checked_references)?,
         DataType::Map(ty) => {
             is_valid_map_key(ty.key_ty(), type_map)?;
             is_valid_ty_internal(ty.value_ty(), type_map, checked_references)?;

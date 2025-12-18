@@ -12,6 +12,20 @@ pub struct Recursive {
     demo: Box<Recursive>,
 }
 
+// https://github.com/specta-rs/specta/issues/285
+// Test for recursive types with Option<Box<_>> pattern that previously caused stack overflow
+#[derive(Type)]
+#[specta(export = false)]
+pub struct RecursiveA {
+    b: RecursiveB,
+}
+
+#[derive(Type)]
+#[specta(export = false)]
+pub struct RecursiveB {
+    a: Option<Box<RecursiveA>>,
+}
+
 #[derive(Type)]
 #[specta(transparent, export = false)]
 pub struct RecursiveMapKeyTrick(RecursiveMapKey);
@@ -69,6 +83,19 @@ fn test_recursive_types() {
         RecursiveMapValue,
         "export type RecursiveMapValue = { demo: Partial<{ [key in string]: RecursiveMapValue }> }"
     );
+}
+
+// https://github.com/specta-rs/specta/issues/285
+// Test for mutual recursive types with Option<Box<_>> that previously caused stack overflow
+// The bug was in is_valid_ty_internal: Nullable case called is_valid_ty instead of is_valid_ty_internal,
+// which reset the checked_references HashSet and caused infinite recursion.
+#[test]
+fn test_recursive_with_option_box() {
+    // These should not cause stack overflow
+    assert_ts!(RecursiveA, "{ b: RecursiveB }");
+    assert_ts!(RecursiveB, "{ a: RecursiveA | null }");
+    assert_ts_export!(RecursiveA, "export type RecursiveA = { b: RecursiveB }");
+    assert_ts_export!(RecursiveB, "export type RecursiveB = { a: RecursiveA | null }");
 }
 
 #[test]

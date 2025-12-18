@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 specta = { path = "../specta", features = ["derive", "export"] }
 specta-typescript = { path = "../specta-typescript" }
+specta-serde = { path = "../specta-serde" }
 
 [lints]
 workspace = true
