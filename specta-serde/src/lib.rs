@@ -47,20 +47,38 @@ fn is_valid_ty_internal(
             is_valid_map_key(ty.key_ty(), type_map)?;
             is_valid_ty_internal(ty.value_ty(), type_map, checked_references)?;
         }
-        DataType::Struct(ty) => match ty.fields() {
-            StructFields::Unit => {}
-            StructFields::Unnamed(ty) => {
-                for (_, ty) in skip_fields(ty.fields()) {
-                    is_valid_ty_internal(ty, type_map, checked_references)?;
+        DataType::Struct(ty) => {
+            // Check for cycles using the struct's sid if available
+            if let Some(sid) = ty.sid() {
+                if checked_references.contains(sid) {
+                    return Ok(());
+                }
+                checked_references.insert(*sid);
+            }
+
+            match ty.fields() {
+                StructFields::Unit => {}
+                StructFields::Unnamed(ty) => {
+                    for (_, ty) in skip_fields(ty.fields()) {
+                        is_valid_ty_internal(ty, type_map, checked_references)?;
+                    }
+                }
+                StructFields::Named(ty) => {
+                    for (_, (_, ty)) in skip_fields_named(ty.fields()) {
+                        is_valid_ty_internal(ty, type_map, checked_references)?;
+                    }
                 }
             }
-            StructFields::Named(ty) => {
-                for (_, (_, ty)) in skip_fields_named(ty.fields()) {
-                    is_valid_ty_internal(ty, type_map, checked_references)?;
-                }
-            }
-        },
+        }
         DataType::Enum(ty) => {
+            // Check for cycles using the enum's sid if available
+            if let Some(sid) = ty.sid() {
+                if checked_references.contains(sid) {
+                    return Ok(());
+                }
+                checked_references.insert(*sid);
+            }
+
             validate_enum(ty, type_map)?;
 
             for (_variant_name, variant) in ty.variants().iter() {

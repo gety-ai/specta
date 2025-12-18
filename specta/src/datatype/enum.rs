@@ -46,6 +46,10 @@ impl EnumType {
         &self.name
     }
 
+    pub fn sid(&self) -> Option<&SpectaID> {
+        self.sid.as_ref()
+    }
+
     pub fn repr(&self) -> &EnumRepr {
         &self.repr
     }
